@@ -19,7 +19,7 @@ namespace Bibitinator
     public partial class BibiteEditor : Form
     {
         BibiteCollection bibCol = null;         //----------------------------- < Declare Bibite Collection & V List of middle neuron names
-        public List<string> middleNodeNames = new List<string> { "Sigmoid", "Linear", "TanH", "Sine", "ReLu", "Gaussian", "Latch", "Differential" };
+        public List<string> middleNodeNames = new List<string> { "Sigmoid", "Linear", "TanH", "Sine", "ReLu", "Gaussian", "Latch", "Differential", "Abs" };
         public BibiteEditor(BibiteCollection col)
         {
             InitializeComponent();
