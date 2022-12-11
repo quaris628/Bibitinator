@@ -11,12 +11,16 @@
   <ItemGroup>
     <Compile Remove="Models\BibiteModel\**" />
     <Compile Remove="Models\BibiteTracer\**" />
+    <Compile Remove="NewFolder\**" />
     <EmbeddedResource Remove="Models\BibiteModel\**" />
     <EmbeddedResource Remove="Models\BibiteTracer\**" />
+    <EmbeddedResource Remove="NewFolder\**" />
     <None Remove="Models\BibiteModel\**" />
     <None Remove="Models\BibiteTracer\**" />
+    <None Remove="NewFolder\**" />
     <Page Remove="Models\BibiteModel\**" />
     <Page Remove="Models\BibiteTracer\**" />
+    <Page Remove="NewFolder\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -61,10 +65,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="NewFolder\" />
   </ItemGroup>
 
   <ItemGroup>
