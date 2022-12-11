@@ -40,6 +40,7 @@ namespace Bibitinator
             this.BrainSaveCopyButton = new System.Windows.Forms.Button();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.AddNeuronMessage = new System.Windows.Forms.Label();
             this.AddNeuronComboBox = new System.Windows.Forms.ComboBox();
             this.addSynapse = new System.Windows.Forms.Button();
             this.AddNeuronButton = new System.Windows.Forms.Button();
@@ -203,6 +204,7 @@ namespace Bibitinator
             // 
             // panel3
             // 
+            this.panel3.Controls.Add(this.AddNeuronMessage);
             this.panel3.Controls.Add(this.AddNeuronComboBox);
             this.panel3.Controls.Add(this.addSynapse);
             this.panel3.Controls.Add(this.AddNeuronButton);
@@ -216,6 +218,16 @@ namespace Bibitinator
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(589, 62);
             this.panel3.TabIndex = 2;
+            // 
+            // AddNeuronMessage
+            // 
+            this.AddNeuronMessage.AutoSize = true;
+            this.AddNeuronMessage.Location = new System.Drawing.Point(276, 36);
+            this.AddNeuronMessage.Name = "AddNeuronMessage";
+            this.AddNeuronMessage.Size = new System.Drawing.Size(53, 15);
+            this.AddNeuronMessage.TabIndex = 12;
+            this.AddNeuronMessage.Text = "message";
+            this.AddNeuronMessage.Visible = false;
             // 
             // AddNeuronComboBox
             // 
@@ -457,5 +469,6 @@ namespace Bibitinator
         private System.Windows.Forms.Button AddNeuronButton;
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.ComboBox AddNeuronComboBox;
+        private System.Windows.Forms.Label AddNeuronMessage;
     }
 }

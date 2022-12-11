@@ -529,6 +529,8 @@ namespace Bibitinator
                 bibCol.dynRoot["brain"]["Nodes"].Last().AddAfterSelf(n);
                 inputComboBox.Items.Add(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
                 outputComboBox.Items.Add(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
+                AddNeuronMessage.Text = "Added " + n["TypeName"] + " neuron '" + n["Desc"] + "'";
+                AddNeuronMessage.Visible = true;
             }
         }
         private void BrainResetButton_Click(object sender, EventArgs e)
