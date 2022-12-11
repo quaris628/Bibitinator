@@ -29,16 +29,17 @@ namespace Bibitinator
         public string settingsExtension = string.Empty;     //---------------- .bb8settings or .json, depending on version
         public string sceneExtension = string.Empty;  //---------------------- .bb8scene or .json, depending on version        
         public string extractTo;    //---------------------------------------- Directory where files are unzipped and acted on
+        private string worldBrowseBibitesFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\AppData\\LocalLow\\The Bibites\\The Bibites";
+        private string bibiteBrowseFilepath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Desktop";
 
         private void worldBrowseButton_Click(object sender, EventArgs e)
         {
             splitContainer1.Cursor = Cursors.Arrow; //------------------------ Don't know why this won't stick in the editor, needs to be set here
             bibiteListView.Items.Clear();   //-------------------------------- Clear the bibite listview before populating it with new bibites
                                                                             // V get user-specific directory locations
-            string bibitesFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\AppData\\LocalLow\\The Bibites\\The Bibites";
             string tempFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\bibitinator";
                                                                             // V jump straight to the bibites directory if it's there
-            if (Directory.Exists(bibitesFilePath)) openWorldZipDialog.InitialDirectory = bibitesFilePath;
+            if (Directory.Exists(worldBrowseBibitesFilePath)) openWorldZipDialog.InitialDirectory = worldBrowseBibitesFilePath;
             openWorldZipDialog.ShowDialog();
             worldFilePathTextBox.Text = openWorldZipDialog.FileName; //------- Display filename when file is selected
 
@@ -47,6 +48,8 @@ namespace Bibitinator
             {
                 Cursor.Current = Cursors.WaitCursor; //----------------------- V everything after the last slash is the filename, extractto [tempFilePath]\[filename]\
                 int lastSlashIndex = openWorldZipDialog.FileName.LastIndexOf('\\');
+                                                                            // V trim off filename and reopen to this folder the next time
+                worldBrowseBibitesFilePath = openWorldZipDialog.FileName.Substring(0, 1 + lastSlashIndex);
                 extractTo = tempFilePath + openWorldZipDialog.FileName.Substring(lastSlashIndex, openWorldZipDialog.FileName.LastIndexOf('.') - lastSlashIndex);
                 if (Directory.Exists(extractTo)) Directory.Delete(extractTo, true);//Make sure we start with a fresh folder
                 ZipFile.ExtractToDirectory(openWorldZipDialog.FileName, extractTo);//And extract to that folder
@@ -654,14 +657,15 @@ namespace Bibitinator
         {
             
             bibiteListView.Items.Clear();
-            string userFilepath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Desktop";
             OpenFileDialog fileDialog = new OpenFileDialog();
-            if (Directory.Exists(userFilepath)) fileDialog.InitialDirectory = userFilepath;
+            if (Directory.Exists(bibiteBrowseFilepath)) fileDialog.InitialDirectory = bibiteBrowseFilepath;
             fileDialog.ShowDialog();
             bibiteBrowseTextBox.Text = fileDialog.FileName;
             //if file upload success, continute, otherwise show invalid
             if (bibiteBrowseTextBox.Text != null && File.Exists(fileDialog.FileName))
             {
+                // trim off filename and reopen to this folder the next time
+                bibiteBrowseFilepath = fileDialog.FileName.Substring(0, 1 + fileDialog.FileName.LastIndexOf("\\"));
                 //set bibite extension
                 if (fileDialog.FileName.EndsWith(".json"))
                 {
