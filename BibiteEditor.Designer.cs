@@ -40,6 +40,8 @@ namespace Bibitinator
             this.BrainSaveCopyButton = new System.Windows.Forms.Button();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.label3 = new System.Windows.Forms.Label();
+            this.neuronNameTextBox = new System.Windows.Forms.TextBox();
             this.AddNeuronMessage = new System.Windows.Forms.Label();
             this.AddNeuronComboBox = new System.Windows.Forms.ComboBox();
             this.addSynapse = new System.Windows.Forms.Button();
@@ -204,6 +206,8 @@ namespace Bibitinator
             // 
             // panel3
             // 
+            this.panel3.Controls.Add(this.label3);
+            this.panel3.Controls.Add(this.neuronNameTextBox);
             this.panel3.Controls.Add(this.AddNeuronMessage);
             this.panel3.Controls.Add(this.AddNeuronComboBox);
             this.panel3.Controls.Add(this.addSynapse);
@@ -219,14 +223,31 @@ namespace Bibitinator
             this.panel3.Size = new System.Drawing.Size(589, 62);
             this.panel3.TabIndex = 2;
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(276, 36);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(42, 15);
+            this.label3.TabIndex = 14;
+            this.label3.Text = "Name:";
+            // 
+            // neuronNameTextBox
+            // 
+            this.neuronNameTextBox.Location = new System.Drawing.Point(321, 33);
+            this.neuronNameTextBox.Name = "neuronNameTextBox";
+            this.neuronNameTextBox.Size = new System.Drawing.Size(136, 23);
+            this.neuronNameTextBox.TabIndex = 13;
+            this.neuronNameTextBox.Text = "HiddenX";
+            // 
             // AddNeuronMessage
             // 
             this.AddNeuronMessage.AutoSize = true;
-            this.AddNeuronMessage.Location = new System.Drawing.Point(276, 36);
+            this.AddNeuronMessage.Location = new System.Drawing.Point(463, 36);
             this.AddNeuronMessage.Name = "AddNeuronMessage";
-            this.AddNeuronMessage.Size = new System.Drawing.Size(53, 15);
+            this.AddNeuronMessage.Size = new System.Drawing.Size(126, 15);
             this.AddNeuronMessage.TabIndex = 12;
-            this.AddNeuronMessage.Text = "message";
+            this.AddNeuronMessage.Text = "Added \'Neuron Name\'";
             this.AddNeuronMessage.Visible = false;
             // 
             // AddNeuronComboBox
@@ -470,5 +491,7 @@ namespace Bibitinator
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.ComboBox AddNeuronComboBox;
         private System.Windows.Forms.Label AddNeuronMessage;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TextBox neuronNameTextBox;
     }
 }

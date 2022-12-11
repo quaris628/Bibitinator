@@ -20,6 +20,9 @@ namespace Bibitinator
     {
         BibiteCollection bibCol = null;         //----------------------------- < Declare Bibite Collection & V List of middle neuron names
         public List<string> middleNodeNames = new List<string> { "Sigmoid", "Linear", "TanH", "Sine", "ReLu", "Gaussian", "Latch", "Differential", "Abs" };
+        private HashSet<string> existingNeuronDescs;
+        private int numOfDefaultDescNeurons;
+
         public BibiteEditor(BibiteCollection col)
         {
             InitializeComponent();
@@ -34,12 +37,20 @@ namespace Bibitinator
             int x = 0;                                                      //- OPPORTUNITY FOR BETTER CODE
                                                                             //- x is the offset needed to select the correct node in new versions,
             if (brainTree.Nodes[0].Nodes.Count == 8) x = 2;        //---------- if (detect version change) then apply offset
+            existingNeuronDescs = new HashSet<string>();
+            numOfDefaultDescNeurons = 0;
             foreach (TreeNode node in brainTree.Nodes)              //--------- < V name each neuron for json properties tree by: 'Description (TypeName)'
             {
-                string desc = node.Nodes[6 - x].Nodes[0].Text + " (" + node.Nodes[1].Nodes[0].Text + ")";
-                node.Text = desc;
+                string desc = node.Nodes[6 - x].Nodes[0].Text;
+                string typeName = node.Nodes[1].Nodes[0].Text;
+                node.Text = desc + " (" + typeName + ")";
+                
+                existingNeuronDescs.Add(desc); //------------------------------ remember descs for later, to make checking for duplicate descs easier
+                if (desc.Equals("Hidden" + numOfDefaultDescNeurons)) {
+                    numOfDefaultDescNeurons++;
+                }
             }
-
+            neuronNameTextBox.Text = "Hidden" + numOfDefaultDescNeurons;
                                                                              // V deserialize json string to JObject
             bibCol.dynRoot = (JObject)JsonConvert.DeserializeObject(bibCol.json, new JsonSerializerSettings() { Culture = CultureInfo.InvariantCulture });
             buildGenesEditor();                                   //------------- start function to setup genes editor
@@ -516,22 +527,52 @@ namespace Bibitinator
         }
         private void AddNeuronButton_Click(object sender, EventArgs e)
         {
-            if (AddNeuronComboBox.SelectedIndex > -1)
-            {
-                JToken n = bibCol.dynRoot["brain"]["Nodes"].FirstOrDefault().DeepClone();
-                n["Type"] = AddNeuronComboBox.SelectedIndex + 1;
-                n["TypeName"] = AddNeuronComboBox.SelectedItem.ToString();
-                n["Index"] = bibCol.dynRoot["brain"]["Nodes"].Children().Count();
-                while (bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<int>("Index").Equals(n.Value<int>("Index"))).Count() > 0) n["Index"] = n.Value<int>("Index") + 1;
-                int i = n.Value<int>("Index") - bibCol.dynRoot["brain"]["Nodes"].Where(x => !x.Value<string>("Desc").Contains("Hidden")).Count();
-                while (bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<string>("Desc") == "Hidden" + i).Count() > 0) i++;
-                n["Desc"] = "Hidden" + i;
-                bibCol.dynRoot["brain"]["Nodes"].Last().AddAfterSelf(n);
-                inputComboBox.Items.Add(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
-                outputComboBox.Items.Add(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
-                AddNeuronMessage.Text = "Added " + n["TypeName"] + " neuron '" + n["Desc"] + "'";
-                AddNeuronMessage.Visible = true;
+            if (AddNeuronComboBox.SelectedIndex < 0) {
+                AddNeuronMessage.Visible = false;
+                return;
             }
+            string desc = neuronNameTextBox.Text;
+            foreach (char c in desc)
+            {
+                // To anyone who changes this, be sure to at minimum filter out spaces, which is what
+                // the add synapse function above looks for to split just the desc out from the selection box's text.
+                if (!Char.IsLetterOrDigit(c))
+                {
+                    AddNeuronMessage.Text = "Invalid char '" + c + "'";
+                    AddNeuronMessage.Visible = true;
+                    return;
+                }
+            }
+            if (existingNeuronDescs.Contains(desc))
+            {
+                AddNeuronMessage.Text = "That name is taken.";
+                AddNeuronMessage.Visible = true;
+                return;
+            }
+            
+            JToken n = bibCol.dynRoot["brain"]["Nodes"].FirstOrDefault().DeepClone();
+            n["Type"] = AddNeuronComboBox.SelectedIndex + 1;
+            n["TypeName"] = AddNeuronComboBox.SelectedItem.ToString();
+            n["Index"] = bibCol.dynRoot["brain"]["Nodes"].Children().Count();
+            while (bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<int>("Index").Equals(n.Value<int>("Index"))).Count() > 0) n["Index"] = n.Value<int>("Index") + 1;
+            int i = n.Value<int>("Index") - bibCol.dynRoot["brain"]["Nodes"].Where(x => !x.Value<string>("Desc").Contains("Hidden")).Count();
+            while (bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<string>("Desc") == "Hidden" + i).Count() > 0) i++;
+            n["Desc"] = desc;
+            bibCol.dynRoot["brain"]["Nodes"].Last().AddAfterSelf(n);
+            inputComboBox.Items.Add(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
+            outputComboBox.Items.Add(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
+            
+            AddNeuronMessage.Text = "Added '" + desc + "'!";
+            AddNeuronMessage.Visible = true;
+
+            existingNeuronDescs.Add(desc);
+            // find next-highest default name that's not already taken
+            while (existingNeuronDescs.Contains("Hidden" + numOfDefaultDescNeurons))
+            {
+                numOfDefaultDescNeurons++;
+            }
+            // set that name to the default for the next neuron
+            neuronNameTextBox.Text = "Hidden" + numOfDefaultDescNeurons;
         }
         private void BrainResetButton_Click(object sender, EventArgs e)
         {
