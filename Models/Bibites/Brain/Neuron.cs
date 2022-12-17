@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Bibitinator.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,8 +7,43 @@ using System.Threading.Tasks;
 
 namespace Bibitinator.Models.Bibites.Brain
 {
-    public class Neuron
+    public class Neuron : Jsonizable
     {
+        public int Index { get; }
+        public Types Type { get; set; }
+        public string Description { get; set; }
+        
+        // unused for now
+        private string inov;
+        private string value;
+        private string lastInput;
+        private string lastOutput;
+
+        public Neuron(int index, Types type, string? description)
+        {
+            if (index < 0) {
+                throw new ArgumentOutOfRangeException("Index cannot be negative"); }
+            if (description == null) {
+                description = "Hidden" + index;
+            } else if (!description.All(char.IsLetterOrDigit)) {
+                throw new InvalidDescriptionException(
+                    "Neuron description must be alphanumeric");
+            }
+
+            Index = index;
+            Type = type;
+            Description = description;
+            inov = "0";
+            value = "0";
+            lastInput = "0.0";
+            lastOutput = "0.0";
+        }
+
+        public override string ToString()
+        {
+            return Description + " : " + Type.ToString();
+        }
+
         public enum Types
         {
             Input = 0,
@@ -22,28 +58,55 @@ namespace Bibitinator.Models.Bibites.Brain
             Abs = 9,
         }
 
-        private static int idCount = 0;
+        // --------------------------------
+        //  JSON Stuff
+        // --------------------------------
 
-        public int Index { get; }
-        public Types Type { get; set; }
-        public string Description { get; set; } // more like a name
+        // Example:
+        // {"Type":5,"TypeName":"ReLu","Index":41,"Inov":0,"Desc":"PhereOut1",
+        //  "Value":0.0,"LastInput":0.0,"LastOutput":0.0}
 
-        public Neuron(Types type, string? description)
+        private const string JSON_FORMAT =
+            "{" +
+            "\"Type\":{0}," +
+            "\"TypeName\":\"{1}\"," +
+            "\"Index\":{2}," +
+            "\"Inov\":0," +
+            "\"Desc\":\"{3}\"," +
+            "\"Value\":\"{4}\"," +
+            "\"LastInput\":{5}," +
+            "\"LastOutput\":{6}" +
+            "}";
+
+        public Neuron(string json, int startIndex) : base(json, startIndex)
         {
-            if (description == null) { description = "Hidden" + Index; }
-            else if (!description.All(char.IsLetterOrDigit)) { throw new InvalidDescException(); }
-            // TODO check if a neuron of that name already exists?
-
-            Index = idCount++;
-            Type = type;
-            Description = description;
+            Type = (Neuron.Types)Enum.Parse(typeof(Neuron.Types),getNextValue());
+            Index = int.Parse(getNextValue());
+            inov = getNextValue();
+            Description = getNextValue();
+            value = getNextValue();
+            lastInput = getNextValue();
+            lastOutput = getNextValue();
+            CleanupJson();
         }
 
-        public override string ToString()
+        public override string ToJson()
         {
-            // TODO test if Type.ToString() returns what I think it does
-            return Description + Type.ToString();
+            return string.Format(JSON_FORMAT,
+                (int)Type,
+                Type.ToString(),
+                Index,
+                inov,
+                Description,
+                value,
+                lastInput,
+                lastOutput);
         }
     }
-    public class InvalidDescException : Exception { }
+    public class InvalidDescriptionException : Exception {
+        public InvalidDescriptionException() : base() { }
+        public InvalidDescriptionException(string? message) : base(message) { }
+        public InvalidDescriptionException(string? message, Exception? innerException)
+            : base(message, innerException) { }
+    }
 }
