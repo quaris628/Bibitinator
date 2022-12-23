@@ -18,9 +18,9 @@ namespace Bibitinator.Models.Bibites.Brain
         public BaseSynapse(BaseNeuron from, BaseNeuron to, float strength)
         {
             if (from == null || to == null) { throw new ArgumentNullException(); }
-            if (from.Equals(to)) { throw new SameNeuronException(
+            if (from.Index == to.Index) { throw new SameNeuronException(
                 "Cannot create a synapse that connects a neuron to itself"); }
-            strength = Math.Max(-10f, Math.Min(strength, 10));
+            strength = Math.Max(-10f, Math.Min(strength, 10f));
 
             From = from;
             To = to;

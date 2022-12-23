@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Bibitinator.Models.Bibites.Brain
 {
-    public class JsonizableNeuron : BaseNeuron
+    public class JsonNeuron : BaseNeuron
     {
 
         // Example:
@@ -32,7 +32,7 @@ namespace Bibitinator.Models.Bibites.Brain
         private string lastInput;
         private string lastOutput;
 
-        public JsonizableNeuron(int index, NeuronType type, string? description)
+        public JsonNeuron(int index, NeuronType type, string? description)
             : base(index, type, description)
         {
             inov = "0";
@@ -41,7 +41,7 @@ namespace Bibitinator.Models.Bibites.Brain
             lastOutput = "0.0";
         }
 
-        public JsonizableNeuron(string json, int startIndex) : base()
+        public JsonNeuron(string json, int startIndex) : base()
         {
             JsonParser parser = new JsonParser(json, startIndex);
             Type = (NeuronType)int.Parse(parser.getNextValue());

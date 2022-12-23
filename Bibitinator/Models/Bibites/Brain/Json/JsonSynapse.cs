@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Bibitinator.Models.Bibites.Brain
 {
-    public class JsonizableSynapse : BaseSynapse
+    public class JsonSynapse : BaseSynapse
     {
 
         // Example:
@@ -30,7 +30,7 @@ namespace Bibitinator.Models.Bibites.Brain
         private string En;
         private string en;
 
-        public JsonizableSynapse(JsonizableNeuron from, JsonizableNeuron to, float strength)
+        public JsonSynapse(JsonNeuron from, JsonNeuron to, float strength)
             : base(from, to, strength)
         {
             inov = "0";
@@ -38,7 +38,7 @@ namespace Bibitinator.Models.Bibites.Brain
             en = "true";
         }
 
-        public JsonizableSynapse(string json, int startIndex, JsonizableBrain brain)
+        public JsonSynapse(string json, int startIndex, JsonBrain brain)
             : base()
         {
             JsonParser parser = new JsonParser(json, startIndex);

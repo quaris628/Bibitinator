@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Bibitinator.Models.Bibites.Brain.Json
 {
-    public class JsonizableBrain : BaseBrain
+    public class JsonBrain : BaseBrain
     {
         // Example:
         // {
@@ -29,13 +29,13 @@ namespace Bibitinator.Models.Bibites.Brain.Json
         private string isReady;
         private string parent;
 
-        public JsonizableBrain() : base()
+        public JsonBrain() : base()
         {
             isReady = "true";
             parent = "true";
         }
 
-        public JsonizableBrain(string json, int startIndex) : base()
+        public JsonBrain(string json, int startIndex) : base()
         {
             JsonParser parser = new JsonParser(json, startIndex);
             isReady = parser.getNextValue();
@@ -44,13 +44,13 @@ namespace Bibitinator.Models.Bibites.Brain.Json
             // parse neurons
             parser.parseArray((json, neuronStartIndex) =>
             {
-                BaseNeuron neuron = new JsonizableNeuron(json, neuronStartIndex);
+                BaseNeuron neuron = new JsonNeuron(json, neuronStartIndex);
                 Add(neuron);
             });
             // parse synapses
             parser.parseArray((json, synapseStartIndex) =>
             {
-                BaseSynapse synapse = new JsonizableSynapse(json, synapseStartIndex, this);
+                BaseSynapse synapse = new JsonSynapse(json, synapseStartIndex, this);
                 Add(synapse);
             });
         }
@@ -70,7 +70,7 @@ namespace Bibitinator.Models.Bibites.Brain.Json
         {
             string[] neuronJsons = new string[Neurons.Count];
             int i = 0;
-            foreach (JsonizableNeuron neuron in Neurons)
+            foreach (JsonNeuron neuron in Neurons)
             {
                 neuronJsons[i++] = neuron.GetSave();
             }
@@ -81,7 +81,7 @@ namespace Bibitinator.Models.Bibites.Brain.Json
         {
             string[] neuronJsons = new string[Synapses.Count];
             int i = 0;
-            foreach (JsonizableSynapse synapse in Synapses)
+            foreach (JsonSynapse synapse in Synapses)
             {
                 neuronJsons[i++] = synapse.GetSave();
             }

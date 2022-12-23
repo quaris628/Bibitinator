@@ -33,7 +33,7 @@ namespace Bibitinator
             InitializeComponent();
             bibCol = col;           //----------------------------------------- set local BibiteCollection Instance to the Instance passed in as an arg
             int jsonStartIndex = col.json.IndexOf("\"brain\":") + "\"brain\":".Length;
-            brain = new JsonizableBrain(col.json, jsonStartIndex);
+            brain = new JsonBrain(col.json, jsonStartIndex);
         }
         private void BibiteEditor_Load(object sender, EventArgs e)
         {
@@ -321,7 +321,7 @@ namespace Bibitinator
             // For each output neuron that has connections coming to it
             foreach (BaseNeuron neuron in brain.Neurons)
             {
-                if (neuron.IsOutput() && brain.GetSynapsesTo((JsonizableNeuron)neuron).Count > 0)
+                if (neuron.IsOutput() && brain.GetSynapsesTo((JsonNeuron)neuron).Count > 0)
                 {
                     TreeNode outputNode = new TreeNode();
 
@@ -517,7 +517,7 @@ namespace Bibitinator
             BaseNeuron neuron;
             try
             {
-                neuron = new JsonizableNeuron(index, type, desc);
+                neuron = new JsonNeuron(index, type, desc);
             }
             catch (InvalidDescriptionException ex)
             {
@@ -570,8 +570,8 @@ namespace Bibitinator
                 BaseSynapse synapse;
                 try
                 {
-                    synapse = new JsonizableSynapse(
-                        (JsonizableNeuron)fromNeuron, (JsonizableNeuron)toNeuron, strength);
+                    synapse = new JsonSynapse(
+                        (JsonNeuron)fromNeuron, (JsonNeuron)toNeuron, strength);
                 }
                 catch (SameNeuronException ex)
                 {
