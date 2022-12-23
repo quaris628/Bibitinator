@@ -1,4 +1,8 @@
-﻿using Bibitinator.Models;
+﻿using Bibitinator.Json;
+using Bibitinator.Models;
+using Bibitinator.Models.Bibites;
+using Bibitinator.Models.Bibites.Brain;
+using Bibitinator.Models.Bibites.Brain.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -18,15 +22,18 @@ namespace Bibitinator
 {
     public partial class BibiteEditor : Form
     {
+        public string[] HIDDEN_NODE_NAMES = new string[] { "Sigmoid", "Linear", "TanH", "Sine", "ReLu", "Gaussian", "Latch", "Differential", "Abs" };
+
         BibiteCollection bibCol = null;         //----------------------------- < Declare Bibite Collection & V List of middle neuron names
-        public List<string> middleNodeNames = new List<string> { "Sigmoid", "Linear", "TanH", "Sine", "ReLu", "Gaussian", "Latch", "Differential", "Abs" };
-        private HashSet<string> existingNeuronDescs;
-        private int numOfDefaultDescNeurons;
+
+        private BaseBrain brain;
 
         public BibiteEditor(BibiteCollection col)
         {
             InitializeComponent();
             bibCol = col;           //----------------------------------------- set local BibiteCollection Instance to the Instance passed in as an arg
+            int jsonStartIndex = col.json.IndexOf("\"brain\":") + "\"brain\":".Length;
+            brain = new JsonizableBrain(col.json, jsonStartIndex);
         }
         private void BibiteEditor_Load(object sender, EventArgs e)
         {
@@ -34,29 +41,15 @@ namespace Bibitinator
             propertiesTree.Nodes[0].Expand(); //------------------------------- expands the main parent node
             TreeNode brainTree = propertiesTree.Nodes[0].Nodes[6].Nodes[2]; //- subset of the json properties tree starting at the "Nodes" node
                                                                             //- the fact I have to say "Nodes" node bothers me >:^I
-            int x = 0;                                                      //- OPPORTUNITY FOR BETTER CODE
-                                                                            //- x is the offset needed to select the correct node in new versions,
-            if (brainTree.Nodes[0].Nodes.Count == 8) x = 2;        //---------- if (detect version change) then apply offset
-            existingNeuronDescs = new HashSet<string>();
-            numOfDefaultDescNeurons = 0;
-            foreach (TreeNode node in brainTree.Nodes)              //--------- < V name each neuron for json properties tree by: 'Description (TypeName)'
-            {
-                string desc = node.Nodes[6 - x].Nodes[0].Text;
-                string typeName = node.Nodes[1].Nodes[0].Text;
-                node.Text = desc + " (" + typeName + ")";
-                
-                existingNeuronDescs.Add(desc); //------------------------------ remember descs for later, to make checking for duplicate descs easier
-                if (desc.Equals("Hidden" + numOfDefaultDescNeurons)) {
-                    numOfDefaultDescNeurons++;
-                }
-            }
-            neuronNameTextBox.Text = "Hidden" + numOfDefaultDescNeurons;
+            
+            neuronNameTextBox.Text = BaseNeuron.GetDefaultDescription(brain.Neurons.Count);
                                                                              // V deserialize json string to JObject
             bibCol.dynRoot = (JObject)JsonConvert.DeserializeObject(bibCol.json, new JsonSerializerSettings() { Culture = CultureInfo.InvariantCulture });
-            buildGenesEditor();                                   //------------- start function to setup genes editor
+            
+            buildGenesAndBrainEditor();                                   //------------- start function to setup genes editor
             BrainTrace();                                            //------------- start function to trace inputs and outputs
             splitContainer1.Cursor = Cursors.Arrow;    //---------------------- for some reason this wont stay in the designer, needs to be set programattically
-            this.Text = bibCol.name;                   //---------------------- set window text to bibite name
+            Text = bibCol.name;                   //---------------------- set window text to bibite name
         }
         private void applyBrainChangesToModel() //APPLIES BRAIN CHAGES TO DYNROOT
         {   //This is certainly the weirdest function in this whole program so heres a brief description of the important steps it takes:
@@ -175,7 +168,7 @@ namespace Bibitinator
             bibCol.dynRoot["brain"]["Nodes"].Replace(validatedNodes); //------ STEP #6) Finally, apply these changes to DynRoot
             bibCol.dynRoot["brain"]["Synapses"].Replace(synapses);
         }
-        private string ReplaceValuesInBibiteSettings(string json) //SAVES GENES DATA TO JSON
+        private void ReplaceValuesInBibiteSettings(ref string json) //SAVES GENES DATA TO JSON
         {
             //- chars to look for to find where the value starts
             char[] nums = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', 'N', 'f', 't' };
@@ -197,7 +190,6 @@ namespace Bibitinator
             }
 
             json = Regex.Replace(json, @"\s", "");                         //- remove whitespace
-            return json;
         }
         void serializeModelData(string name) //SERIALIZES DYNROOT TO JSON, SAVES TO FILE
         {
@@ -205,9 +197,8 @@ namespace Bibitinator
             //the version selection is janky, needs to use the version property in settings.json, currently theres only two versions supported and it differentiates via the file typ
             string json = string.Empty;
             json = JsonConvert.SerializeObject(bibCol.dynRoot, new JsonSerializerSettings() { Culture = CultureInfo.InvariantCulture });
-
-            json = ReplaceValuesInBibiteSettings(json);
-            bibCol.json = json;
+            ReplaceValuesInBibiteSettings(ref json);
+            ReplaceBrainJson(ref json);
             //confirm file was created
             if (File.Exists(bibCol.saveTo + name))
             {
@@ -218,7 +209,19 @@ namespace Bibitinator
             {
                 MessageBox.Show("Saved Sucessfully");
             }
+            bibCol.json = json;
         }
+
+        // because the brain is using a different data model, must do this json splice so
+        // the brain stuff works with the rest of the dynRoot data model version
+        private void ReplaceBrainJson(ref string json)
+        {
+            string brainJson = ((Jsonizable)brain).ToJson();
+            int startIndex = json.IndexOf("\"brain\":") + "\"brain\":".Length;
+            int endIndex = json.IndexOf("\"immuneSystem\"");
+            json = json.Substring(0, startIndex) + brainJson + ',' + json.Substring(endIndex);
+        }
+
         public TreeNode RecursiveJPropTreeNodeBuilder(BibiteCollection col) //BUILD JSON PROPERTIES TREE VIEW
         {
             var jobj = JObject.Parse(col.json);      //----------------------- Deserialize json string to JObject, Why not just use bibcol.dynroot? idk, maybe I had a good reason i dont rememeber now
@@ -258,7 +261,7 @@ namespace Bibitinator
             tn.Text = col.name; //-------------------------------------------- Set main node name to bibite name
             return tn;
         }
-        public void buildGenesEditor() //BUILD GENES EDITOR
+        public void buildGenesAndBrainEditor() //BUILD GENES EDITOR
         {
             //Tag ref:
             //label: "label" string, used when saving genes so the program knows not to do anything with it
@@ -281,64 +284,58 @@ namespace Bibitinator
                 t.Dock = DockStyle.Right;
                 p.Parent = editorflow;
             }
-            List<JToken> nodes = bibCol.dynRoot["brain"]["Nodes"].ToList();//- Get list of Neurons
-            foreach (string node in middleNodeNames)
-            {                              //--------------------------------- Add middle nodes to the middle node dropdown
-                AddNeuronComboBox.Items.Add(node);
-            }
-            foreach (JToken node in nodes) //--------------------------------- Sort through nodes in bibite json and add them to the corresponding dropdowns
+
+            // ----- Brain UI -----
+
+            // Populate node types dropdown
+            AddNeuronComboBox.Items.AddRange(Enum.GetNames(typeof(NeuronType)));
+            AddNeuronComboBox.Text = "select";
+
+            // Populate synapse creation node dropdowns
+            foreach (BaseNeuron neuron in brain.Neurons)
             {
-
-                if (node.Value<string>("TypeName").Equals("Input"))  //------- Inputs go to inputs
+                if (!neuron.IsOutput())
                 {
-                    inputComboBox.Items.Add(node.Value<string>("Desc") + " :Input");
+                    inputComboBox.Items.Add(neuron.ToString());
                 }
-                else if (node.Value<string>("Desc").Contains("Hidden")) //---- Middles go to input & output
+                if (!neuron.IsInput())
                 {
-                    inputComboBox.Items.Add(node.Value<string>("Desc") + " :" + node.Value<string>("TypeName"));
-                    outputComboBox.Items.Add(node.Value<string>("Desc") + " :" + node.Value<string>("TypeName"));
-                }
-                else    //---------------------------------------------------- Outputs go to output
-                {
-                    outputComboBox.Items.Add(node.Value<string>("Desc") + " :Output");
+                    outputComboBox.Items.Add(neuron.ToString());
                 }
             }
-
             inputComboBox.Text = "select";
             outputComboBox.Text = "select";
             
-            List<JToken> synaps = bibCol.dynRoot["brain"]["Synapses"].ToList();
-            foreach (JToken synap in synaps)   //----------------------------- ^Get list of synapses < for each V pass them to AddSynapsPanel
+            // Create synapse panels
+            foreach (BaseSynapse synapse in brain.Synapses)   //----------------------------- ^Get list of synapses < for each V pass them to AddSynapsPanel
             {
-                AddSynapsePanel(synap);
+                AddSynapsePanel(synapse);
             }
         }
         private void BrainTrace() //TRACE SYNAPSE CONNECTIONS AND CREATE A TREE VIEW FROM OUTPUTS TO ITS INPUTS
         {
             ConnectionsTreeView.Nodes.Clear();  //---------------------------- Clear the brain tree
             List<string> InputList = new List<string>(); //------------------- Holds the list of inputs to be displayed next to the output neuron for readability
-            List<int> NoLoops = new List<int>();   //------------------------- Holds a list of nodes indexes to prevent loops
-                                                   //------------------------- V Get output neurons from dynroot, pass each Jtoken into TraceOutputNeurons func
-            bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<string>("TypeName") != "Input" && !x.Value<string>("Desc").Contains("Hidden")).ToList().ForEach(TraceOutputNeurons); ;
+            HashSet<int> alreadyVisitedNeuronIndices = new HashSet<int>();   //------------------------- Holds a list of nodes indexes to prevent loops
 
-            void TraceOutputNeurons(JToken n) //Caller for the recursive Tracer function
+            // For each output neuron that has connections coming to it
+            foreach (BaseNeuron neuron in brain.Neurons)
             {
-                InputList.Clear();     //------------------------------------- < V Empty out variables for each output node
-                string listtext = string.Empty;
-                NoLoops.Clear();
-                TreeNode node = new TreeNode();
-
-                Tracer(n, node);  //------------------------------------------ Call Recursive Function
-                for (int i = 0; i < InputList.Count; i++)  //----------------- Add input neurons to listtext string
+                if (neuron.IsOutput() && brain.GetSynapsesTo((JsonizableNeuron)neuron).Count > 0)
                 {
-                    listtext += InputList[i];
-                    if (i != InputList.Count - 1) listtext += ", "; //-------- Add commas after the inputs except for the last one
-                }
-                node.Text = n.Value<string>("Desc") + "  Input Neurons : " + listtext;
-                //- V if node is not empty, add it to the treeview
-                if (node.Nodes.Count > 0) ConnectionsTreeView.Nodes.Add(node);
-            }
+                    TreeNode outputNode = new TreeNode();
 
+                    // Look at the synapses coming from it
+                    HashSet<string> leafInputNeuronDescs = new HashSet<string>();
+                    BrainTraceRecursive(neuron, outputNode, alreadyVisitedNeuronIndices, leafInputNeuronDescs);
+                    
+                    // Generate text for this output neuron's UI tree node, and add it to the UI tree
+                    outputNode.Text = neuron.ToString() + " | Input Neurons: " + string.Join(',', leafInputNeuronDescs);
+                    ConnectionsTreeView.Nodes.Add(outputNode);
+                }
+            }
+            
+            /*
             void Tracer(JToken n, TreeNode inTreeNode) //Recursive function to trace synapses
             {
 
@@ -346,9 +343,9 @@ namespace Bibitinator
                 // when it reaches the end (input) add it to the list of input neruons
                 // for that output, unless its already in there
                 if (n.Value<string>("TypeName").Equals("Input") && !InputList.Contains(n.Value<string>("Desc"))) InputList.Add(n.Value<string>("Desc"));
-                else if (!NoLoops.Contains(n.Value<int>("Index"))) //--------- make sure the function isnt in an infinite loop
+                else if (!alreadyVisitedNeuronIndices.Contains(n.Value<int>("Index"))) //--------- make sure the function isnt in an infinite loop
                 {
-                    NoLoops.Add(n.Value<int>("Index"));
+                    alreadyVisitedNeuronIndices.Add(n.Value<int>("Index"));
                     List<JToken> inputNeurons = new List<JToken>(); //-------- make list of nodes with synapses going into current neuron
                     List<double> weight = new List<double>();       //-------- and a parallel list of weights
                     void recordSynapseData(JToken s)  // Adds a input Neuron to inputNeurons and weight Lists
@@ -377,12 +374,40 @@ namespace Bibitinator
 
                 }
             }
-
-
-
-
+            //*/
         }
-        private void AddSynapsePanel(JToken synap) //ADDS SYNAPSE TO SYNAPSE LIST
+
+        private void BrainTraceRecursive(BaseNeuron toNeuron, TreeNode parentNode,
+            HashSet<int> alreadyVisitedNeuronIndices, HashSet<string> leafInputNeuronDescs)
+        {
+            // For each of the synapses coming from this neuron,
+            foreach (BaseSynapse synapse in brain.GetSynapsesTo((BaseNeuron)toNeuron)) // TODO maybe fix the explicit case
+            {
+                // Look at the neuron the synapse comes from
+                BaseNeuron fromNeuron = synapse.From;
+
+                // Add the neuron to the UI tree
+                TreeNode childNode = new TreeNode(fromNeuron.ToString());
+                parentNode.Nodes.Add(childNode);
+
+                // (Track in order to list the descriptions of all input neurons that affect each output neuron)
+                if (fromNeuron.IsInput())
+                {
+                    leafInputNeuronDescs.Add(fromNeuron.Description);
+                }
+
+                // If it's not an output neuron and we haven't already visited it,
+                if (!fromNeuron.IsOutput() && !alreadyVisitedNeuronIndices.Contains(fromNeuron.Index))
+                {
+                    alreadyVisitedNeuronIndices.Add(fromNeuron.Index);
+                    // look at all the synapses coming from it...
+                    BrainTraceRecursive(fromNeuron, childNode, alreadyVisitedNeuronIndices, leafInputNeuronDescs);
+                    alreadyVisitedNeuronIndices.Remove(fromNeuron.Index);
+                }
+            }
+        }
+
+        private void AddSynapsePanel(BaseSynapse synapse) //ADDS SYNAPSE TO SYNAPSE LIST
         {
             //Tag Ref:
             //Panel: relatedNodes JToken list
@@ -390,13 +415,7 @@ namespace Bibitinator
             //Input box: Nodein int
             //Output box: Nodeout int
             //UpDown box: En bool
-            List<JToken> relatedNodes = new List<JToken>();
-                                                                    //-------- Get nodes that this synaps connects to add them to list ^
-                                                                    //-------- V Need this to display the name of the node, synaps only contains the index
-            relatedNodes.Add(bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<int>("Index").Equals(synap.Value<int>("NodeIn"))).First());
-            relatedNodes.Add(bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<int>("Index").Equals(synap.Value<int>("NodeOut"))).First());
-            FlowLayoutPanel p = new FlowLayoutPanel();            //---------- set up panel & visual formatting stuff
-            p.Anchor = AnchorStyles.Top;
+            
             TextBox cbIn = new TextBox();
             TextBox cbOut = new TextBox();
             TextBox nud = new TextBox();
@@ -405,19 +424,20 @@ namespace Bibitinator
             cbOut.ReadOnly = true;
             nud.ReadOnly = true;
             
-            Tuple<int, int>  tup = Tuple.Create(synap.Value<int>("NodeOut"), synap.Value<int>("NodeIn"));
-            del.Tag = tup; //------------------------------------------------- set up delete button with the node indexes in it's tag
+            
+            del.Tag = (synapse.From.Index, synapse.To.Index); //------------------------------------------------- set up delete button with the node indexes in it's tag
             del.Text = "Remove";
             del.Click += synapseDeleteButton_Click;
                                                                             // V Input/Output node text, use Desc for static nodes and Typename for Hidden nodes
-            cbIn.Text = synap.Value<int>("NodeIn") < 43 ? relatedNodes[0].Value<String>("Desc") : relatedNodes[0].Value<String>("Desc") + " :" + relatedNodes[0].Value<String>("TypeName");
-            cbIn.Tag = relatedNodes[0].Value<int>("Index");
-            cbOut.Text = synap.Value<int>("NodeOut") < 43 ? relatedNodes[1].Value<String>("Desc") : relatedNodes[1].Value<String>("Desc") + " :" + relatedNodes[1].Value<String>("TypeName");
-            cbOut.Tag = relatedNodes[1].Value<int>("Index");
-            nud.Text = synap.Value<string>("Weight");                    //--- < set updown box value for weight and V set tag as en for use in saving
-            nud.Tag = synap.Value<bool>("en");
+            cbIn.Text = synapse.From.Description;
+            cbIn.Tag = synapse.From.Index;
+            cbOut.Text = synapse.To.Description;
+            cbOut.Tag = synapse.To.Index;
+            nud.Text = synapse.Strength.ToString();                    //--- < set updown box value for weight and V set tag as en for use in saving
+            nud.Tag = true; // always assumes "en" locale
 
-            //more visual formatting stuff
+            FlowLayoutPanel p = new FlowLayoutPanel();            //---------- set up panel & visual formatting stuff
+            p.Anchor = AnchorStyles.Top;
             p.Cursor = Cursors.Arrow;
             p.Controls.Add(cbIn);
             p.Controls.Add(cbOut);
@@ -426,37 +446,13 @@ namespace Bibitinator
             p.Height = cbIn.Height + 10;
             cbIn.Width = 125;
             cbOut.Width = 125;
-            p.Tag = relatedNodes;
+            // TODO figure this out v
+            p.Tag = null; // was being set to a List<JToken> relatedNodes
             p.Parent = BrainEditorPanel;
             p.Dock = DockStyle.Top;
             p.Show();
-        }       
-        private void synapseDeleteButton_Click(object sender, EventArgs e)
-        {
-            Tuple<int,int> tagTup =  (Tuple<int,int>)((Button)sender).Tag; //- Get the tag containing NodeIn/Nodeout
-            try
-            {
-                                                                           //- V get synapse token from dynRoot
-                JToken syn = bibCol.dynRoot["brain"]["Synapses"].Where(x => x.Value<int>("NodeOut") == tagTup.Item1 && x.Value<int>("NodeIn") == tagTup.Item2).First();
-                                                                           //- V Remove synapse token from dynRoot
-                bibCol.dynRoot["brain"]["Synapses"].Where(x => x.Equals(syn)).First().Remove();
-                void removeFromNodesAndDropDown(JToken n)  //----------------- Func to remove unconnected node
-                {
-                    if (n.Value<string>("Desc").Contains("Hidden"))  //------- Make sure its not a static node
-                    {                                                      //- Remove the node from dynroot & input/output node dropdowns
-                        bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Equals(n)).First().Remove();
-                        inputComboBox.Items.Remove(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
-                        outputComboBox.Items.Remove(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
-                    }                                                      //- for the in and out node check for any synapses that connect to that node
-                }                                                          //- if the node has no connections, pass it into the removeFromNodesAndDropDown function
-                                                                           //- V this will not delete static nodes as the function checks for that
-                if (bibCol.dynRoot["brain"]["Synapses"].Where(x => x.Value<int>("NodeOut").Equals(syn.Value<int>("NodeIn")) || x.Value<int>("NodeIn").Equals(syn.Value<int>("NodeIn"))).Count() == 0) removeFromNodesAndDropDown(bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<int>("Index").Equals(syn.Value<int>("NodeIn"))).First());
-                if (bibCol.dynRoot["brain"]["Synapses"].Where(x => x.Value<int>("NodeOut").Equals(syn.Value<int>("NodeOut")) || x.Value<int>("NodeIn").Equals(syn.Value<int>("NodeOut"))).Count() == 0) removeFromNodesAndDropDown(bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<int>("Index").Equals(syn.Value<int>("NodeOut"))).First());
+        }
 
-            } catch(Exception ex) { MessageBox.Show(ex.Message); }
-            BrainTrace();    //---------------------------------------------------- Refresh the brain tree without the deleted synapse
-            BrainEditorPanel.Controls.Remove(((Button)sender).Parent); //----- Remove the panel from the synapse editor list
-        }     
         private void saveButton_Click(object sender, EventArgs e)
         {
             Cursor = Cursors.WaitCursor;                                  
@@ -464,7 +460,8 @@ namespace Bibitinator
             {
                 File.Delete(bibCol.saveTo + bibCol.name);
             }
-            string json = ReplaceValuesInBibiteSettings(bibCol.json);      //- Save Genes
+            string json = bibCol.json;
+            ReplaceValuesInBibiteSettings(ref json);      //- Save Genes
             bibCol.json = json;
             File.WriteAllText(bibCol.saveTo + bibCol.name, json);   //- Write new file
 
@@ -484,7 +481,7 @@ namespace Bibitinator
             inputComboBox.Items.Clear();
             outputComboBox.Items.Clear();
             AddNeuronComboBox.Items.Clear();
-            buildGenesEditor();
+            buildGenesAndBrainEditor();
         }
         private void ConnectionsTreeView_AfterSelect(object sender, TreeViewEventArgs e) //HIGHLIGHTS SYNAPSE WHEN SELECTED IN BRAIN TREE
         {
@@ -503,80 +500,102 @@ namespace Bibitinator
                 }
             }
         }
+        private void AddNeuronButton_Click(object sender, EventArgs e)
+        {
+            // check if a type has been selected
+            if (AddNeuronComboBox.SelectedIndex < 0)
+            {
+                AddElementMessage.Visible = false;
+                return;
+            }
+            // check if desc contains any invalid characters
+            string desc = neuronNameTextBox.Text;
+            
+            // Create new neuron and add it to the model
+            int index = brain.Neurons.Count;
+            NeuronType type = (NeuronType)(AddNeuronComboBox.SelectedIndex + 1); // TODO check if +1 offset is still needed?
+            BaseNeuron neuron;
+            try
+            {
+                neuron = new JsonizableNeuron(index, type, desc);
+            }
+            catch (InvalidDescriptionException ex)
+            {
+                AddElementMessage.Text = ex.Message;
+                AddElementMessage.Visible = true;
+                return;
+            }
+            try
+            {
+                brain.Add(neuron);
+            }
+            catch (ContainsDuplicateException ex)
+            {
+                AddElementMessage.Text = ex.Message;
+                AddElementMessage.Visible = true;
+                return;
+            }
+            
+            // update UI
+            inputComboBox.Items.Add(neuron.ToString());
+            outputComboBox.Items.Add(neuron.ToString());
+            neuronNameTextBox.Text = BaseNeuron.GetDefaultDescription(brain.Neurons.Count);
+            AddElementMessage.Text = "Added Neuron '" + desc + "'!";
+            AddElementMessage.Visible = true;
+        }
         private void addSynapse_Click(object sender, EventArgs e)
         {
             if (inputComboBox.SelectedIndex != -1 && outputComboBox.SelectedIndex != -1 && outputComboBox.SelectedItem != inputComboBox.SelectedItem)
             {
-                                                                           //- Get a synapse to edit, I think editing an empty bibite will break this
-                JToken s = bibCol.dynRoot["brain"]["Synapses"].FirstOrDefault().DeepClone();
-                string input = inputComboBox.SelectedItem.ToString();      //- Get input and output name, remove text after the space so its only the actual name
-                input = input.Remove(input.IndexOf(' '));
-                string output = outputComboBox.SelectedItem.ToString();
-                output = output.Remove(output.IndexOf(' '));
-                                                                           //- get node indexes by input/output names & set them
-                s["NodeIn"] = bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<string>("Desc") == input).First().Value<int>("Index");
-                s["NodeOut"] = bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<string>("Desc") == output).First().Value<int>("Index");
-                s["en"] = true;                                            //- < Always enabled and V set weight
-                s["Weight"] = double.Parse(strengthUpDown.Value.ToString(), CultureInfo.InvariantCulture);
-                s["Inov"] = 0;                                             //- IDK what Inov does
-                bibCol.dynRoot["brain"]["Synapses"].Last().AddAfterSelf(s);//- Add to dynroot
-                AddSynapsePanel(s);                                        //- Add to editor
-                BrainTrace();                                                   //- refresh brain tree
-            }
-                
-        }
-        private void AddNeuronButton_Click(object sender, EventArgs e)
-        {
-            if (AddNeuronComboBox.SelectedIndex < 0) {
-                AddNeuronMessage.Visible = false;
-                return;
-            }
-            string desc = neuronNameTextBox.Text;
-            foreach (char c in desc)
-            {
-                // To anyone who changes this, be sure to at minimum filter out spaces, which is what
-                // the add synapse function above looks for to split just the desc out from the selection box's text.
-                if (!Char.IsLetterOrDigit(c))
+                string fromDescription = inputComboBox.SelectedItem.ToString();      //- Get input and output name, remove text after the space so its only the actual name
+                fromDescription = fromDescription.Remove(fromDescription.IndexOf(' '));
+                string toDescription = outputComboBox.SelectedItem.ToString();
+                toDescription = toDescription.Remove(toDescription.IndexOf(' '));
+                BaseNeuron fromNeuron;
+                BaseNeuron toNeuron;
+                try
                 {
-                    AddNeuronMessage.Text = "Invalid char '" + c + "'";
-                    AddNeuronMessage.Visible = true;
+                    fromNeuron = brain.GetNeuron(fromDescription);
+                    toNeuron = brain.GetNeuron(toDescription);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    AddElementMessage.Text = ex.Message; // TODO what's this message? Is it acceptable?
+                    AddElementMessage.Visible = true;
                     return;
                 }
-            }
-            if (existingNeuronDescs.Contains(desc))
-            {
-                AddNeuronMessage.Text = "That name is taken.";
-                AddNeuronMessage.Visible = true;
-                return;
-            }
-            
-            JToken n = bibCol.dynRoot["brain"]["Nodes"].FirstOrDefault().DeepClone();
-            n["Type"] = AddNeuronComboBox.SelectedIndex + 1;
-            n["TypeName"] = AddNeuronComboBox.SelectedItem.ToString();
-            n["Index"] = bibCol.dynRoot["brain"]["Nodes"].Children().Count();
-            while (bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<int>("Index").Equals(n.Value<int>("Index"))).Count() > 0) n["Index"] = n.Value<int>("Index") + 1;
-            int i = n.Value<int>("Index") - bibCol.dynRoot["brain"]["Nodes"].Where(x => !x.Value<string>("Desc").Contains("Hidden")).Count();
-            while (bibCol.dynRoot["brain"]["Nodes"].Where(x => x.Value<string>("Desc") == "Hidden" + i).Count() > 0) i++;
-            n["Desc"] = desc;
-            bibCol.dynRoot["brain"]["Nodes"].Last().AddAfterSelf(n);
-            inputComboBox.Items.Add(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
-            outputComboBox.Items.Add(n.Value<string>("Desc") + " :" + n.Value<string>("TypeName"));
-            
-            AddNeuronMessage.Text = "Added '" + desc + "'!";
-            AddNeuronMessage.Visible = true;
+                float strength = float.Parse(strengthUpDown.Value.ToString(), CultureInfo.InvariantCulture);
 
-            existingNeuronDescs.Add(desc);
-            // find next-highest default name that's not already taken
-            while (existingNeuronDescs.Contains("Hidden" + numOfDefaultDescNeurons))
-            {
-                numOfDefaultDescNeurons++;
+                // Add synapse to model
+                BaseSynapse synapse;
+                try
+                {
+                    synapse = new JsonizableSynapse(
+                        (JsonizableNeuron)fromNeuron, (JsonizableNeuron)toNeuron, strength);
+                }
+                catch (SameNeuronException ex)
+                {
+                    AddElementMessage.Text = ex.Message;
+                    AddElementMessage.Visible = true;
+                    return;
+                }
+
+                // update UI
+                AddSynapsePanel(synapse);                                       //- Add to editor
+                BrainTrace();                                                   //- refresh brain tree
             }
-            // set that name to the default for the next neuron
-            neuronNameTextBox.Text = "Hidden" + numOfDefaultDescNeurons;
+            
+        }
+        private void synapseDeleteButton_Click(object sender, EventArgs e)
+        {
+            Tuple<int, int> tagTup = (Tuple<int, int>)((Button)sender).Tag; //- Get the tag containing NodeIn/Nodeout
+            brain.GetSynapse(tagTup.Item1, tagTup.Item2);
+            BrainTrace();    //---------------------------------------------------- Refresh the brain tree without the deleted synapse
+            BrainEditorPanel.Controls.Remove(((Button)sender).Parent); //----- Remove the panel from the synapse editor list
         }
         private void BrainResetButton_Click(object sender, EventArgs e)
         {
-
+            // TODO maybe ?
         }
         private void BrainSaveButton_Click(object sender, EventArgs e)
         {

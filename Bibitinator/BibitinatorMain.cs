@@ -679,26 +679,19 @@ namespace Bibitinator
                 {
                     worldFilePathTextBox.Text = "error";
                 }
-                try
+                //initiate bibite collection
+                BibiteCollection col = new BibiteCollection();
+                string result = string.Empty;
+                using (StreamReader r = new StreamReader(fileDialog.FileName))
                 {
-                    //initiate bibite collection
-                    BibiteCollection col = new BibiteCollection();
-                    string result = string.Empty;
-                    using (StreamReader r = new StreamReader(fileDialog.FileName))
-                    {
-                        result = r.ReadToEnd();
-                    }
-                    col.json = result;
-                    int nameStart = fileDialog.FileName.LastIndexOf("\\") + 1;
-                    col.name = fileDialog.FileName.Substring(nameStart);
-                    col.saveTo = fileDialog.FileName.Substring(0, fileDialog.FileName.Length - col.name.Length);
-                    BibiteEditor editorWindow = new BibiteEditor(col);
-                    editorWindow.Show();
+                    result = r.ReadToEnd();
                 }
-                catch
-                {
-
-                }
+                col.json = result;
+                int nameStart = fileDialog.FileName.LastIndexOf("\\") + 1;
+                col.name = fileDialog.FileName.Substring(nameStart);
+                col.saveTo = fileDialog.FileName.Substring(0, fileDialog.FileName.Length - col.name.Length);
+                BibiteEditor editorWindow = new BibiteEditor(col);
+                editorWindow.Show();
             }
             else
             {

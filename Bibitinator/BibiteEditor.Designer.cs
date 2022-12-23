@@ -42,7 +42,7 @@ namespace Bibitinator
             this.panel3 = new System.Windows.Forms.Panel();
             this.label3 = new System.Windows.Forms.Label();
             this.neuronNameTextBox = new System.Windows.Forms.TextBox();
-            this.AddNeuronMessage = new System.Windows.Forms.Label();
+            this.AddElementMessage = new System.Windows.Forms.Label();
             this.AddNeuronComboBox = new System.Windows.Forms.ComboBox();
             this.addSynapse = new System.Windows.Forms.Button();
             this.AddNeuronButton = new System.Windows.Forms.Button();
@@ -201,14 +201,14 @@ namespace Bibitinator
             this.splitContainer2.Panel2.Controls.Add(this.BrainEditorPanel);
             this.splitContainer2.Panel2.Cursor = System.Windows.Forms.Cursors.Arrow;
             this.splitContainer2.Size = new System.Drawing.Size(589, 676);
-            this.splitContainer2.SplitterDistance = 62;
+            this.splitContainer2.SplitterDistance = 78;
             this.splitContainer2.TabIndex = 0;
             // 
             // panel3
             // 
             this.panel3.Controls.Add(this.label3);
             this.panel3.Controls.Add(this.neuronNameTextBox);
-            this.panel3.Controls.Add(this.AddNeuronMessage);
+            this.panel3.Controls.Add(this.AddElementMessage);
             this.panel3.Controls.Add(this.AddNeuronComboBox);
             this.panel3.Controls.Add(this.addSynapse);
             this.panel3.Controls.Add(this.AddNeuronButton);
@@ -220,7 +220,7 @@ namespace Bibitinator
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel3.Location = new System.Drawing.Point(0, 0);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(589, 62);
+            this.panel3.Size = new System.Drawing.Size(589, 78);
             this.panel3.TabIndex = 2;
             // 
             // label3
@@ -240,15 +240,15 @@ namespace Bibitinator
             this.neuronNameTextBox.TabIndex = 13;
             this.neuronNameTextBox.Text = "HiddenX";
             // 
-            // AddNeuronMessage
+            // AddElementMessage
             // 
-            this.AddNeuronMessage.AutoSize = true;
-            this.AddNeuronMessage.Location = new System.Drawing.Point(463, 36);
-            this.AddNeuronMessage.Name = "AddNeuronMessage";
-            this.AddNeuronMessage.Size = new System.Drawing.Size(126, 15);
-            this.AddNeuronMessage.TabIndex = 12;
-            this.AddNeuronMessage.Text = "Added \'Neuron Name\'";
-            this.AddNeuronMessage.Visible = false;
+            this.AddElementMessage.AutoSize = true;
+            this.AddElementMessage.Location = new System.Drawing.Point(3, 58);
+            this.AddElementMessage.Name = "AddElementMessage";
+            this.AddElementMessage.Size = new System.Drawing.Size(126, 15);
+            this.AddElementMessage.TabIndex = 12;
+            this.AddElementMessage.Text = "Added \'Neuron Name\'";
+            this.AddElementMessage.Visible = false;
             // 
             // AddNeuronComboBox
             // 
@@ -356,7 +356,7 @@ namespace Bibitinator
             this.BrainEditorPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.BrainEditorPanel.Location = new System.Drawing.Point(0, 0);
             this.BrainEditorPanel.Name = "BrainEditorPanel";
-            this.BrainEditorPanel.Size = new System.Drawing.Size(589, 610);
+            this.BrainEditorPanel.Size = new System.Drawing.Size(589, 594);
             this.BrainEditorPanel.TabIndex = 0;
             // 
             // Genes
@@ -403,7 +403,6 @@ namespace Bibitinator
             // 
             // splitter1
             // 
-            this.splitter1.Cursor = System.Windows.Forms.Cursors.Arrow;
             this.splitter1.Location = new System.Drawing.Point(3, 3);
             this.splitter1.Name = "splitter1";
             this.splitter1.Size = new System.Drawing.Size(94, 670);
@@ -490,7 +489,7 @@ namespace Bibitinator
         private System.Windows.Forms.Button AddNeuronButton;
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.ComboBox AddNeuronComboBox;
-        private System.Windows.Forms.Label AddNeuronMessage;
+        private System.Windows.Forms.Label AddElementMessage;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox neuronNameTextBox;
     }

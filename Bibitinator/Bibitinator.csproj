@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -11,16 +11,12 @@
   <ItemGroup>
     <Compile Remove="Models\BibiteModel\**" />
     <Compile Remove="Models\BibiteTracer\**" />
-    <Compile Remove="NewFolder\**" />
     <EmbeddedResource Remove="Models\BibiteModel\**" />
     <EmbeddedResource Remove="Models\BibiteTracer\**" />
-    <EmbeddedResource Remove="NewFolder\**" />
     <None Remove="Models\BibiteModel\**" />
     <None Remove="Models\BibiteTracer\**" />
-    <None Remove="NewFolder\**" />
     <Page Remove="Models\BibiteModel\**" />
     <Page Remove="Models\BibiteTracer\**" />
-    <Page Remove="NewFolder\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,7 +45,8 @@
 
   <ItemGroup>
     <PackageReference Include="7-Zip.CommandLine" Version="18.1.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
   <ItemGroup>
